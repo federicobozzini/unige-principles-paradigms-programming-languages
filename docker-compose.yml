@@ -1,0 +1,10 @@
+version: '2'
+services:
+  pppl:
+    image: haskell:8
+    container_name: pppl
+    volumes:
+      - .:/var/www
+    restart: always
+    working_dir: /var/www
+    entrypoint: ghci
