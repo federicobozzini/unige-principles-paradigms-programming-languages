@@ -11,27 +11,45 @@ function shuffle(array) {
     return array;
 }
 
-const add = {
-    apply: (a, b) => a + b,
-    isApplicable: (a, b) => true,
-    toString: () => 'sum'
+const concat = (x, y) =>
+    x.concat(y)
+
+const flatMap = (f, xs) =>
+    xs.map(f).reduce(concat, [])
+
+function print(x) {
+    console.log(x + '');
 }
-const sub = {
-    apply: (a, b) => a - b,
-    isApplicable: (a, b) => a >= b,
-    toString: () => 'sub'
+
+function Add(v) {
+    this.v = v;
+    this.apply = a => v + a;
+    this.isApplicable = a => true;
+    this.toString = () => 'add ' + v;
 }
-const mul = {
-    apply: (a, b) => a * b,
-    isApplicable: (a, b) => true,
-    toString: () => 'mul'
+function Sub(v) {
+    this.v = v;
+    this.apply = a => v - a;
+    this.isApplicable = a => a >= v;
+    this.toString = () => 'sub ' + v;
 }
-const div = {
-    apply: (a, b) => a / b,
-    isApplicable: (a, b) => a % b === 0,
-    toString: () => 'div'
+function Mul(v) {
+    this.v = v;
+    this.apply = a => v * a;
+    this.isApplicable = a => true;
+    this.toString = () => 'mul ' + v;
 }
-const ops = [add, mul, sub, div];
+function Div(v) {
+    this.v = v;
+    this.apply = a => v / a;
+    this.isApplicable = a => a % v === 0;
+    this.toString = () => 'div ' + v;
+}
+
+function getMoves(numSeq) {
+    const ops = [Add, Sub, Mul, Div];
+    return flatMap(n => ops.map(op => new op(n)), numSeq);
+}
 
 function depthFirstCountdown(numSeq, target, maxDepth = 15) {
 
@@ -53,17 +71,13 @@ function depthFirstCountdown(numSeq, target, maxDepth = 15) {
             minDepth = minOpSeq.length;
             return;
         }
-        let nextStateParams = [];
-        for (let v of numSeq)
-            for (let op of ops) {
-                if (op.isApplicable(val, v))
-                    nextStateParams.push({ v, op });
-            }
 
-        nextStateParams = shuffle(nextStateParams);
+        const validMoves = shuffle(getMoves(numSeq)
+            .filter(move => move.isApplicable(val)));
 
-        for (let nsp of nextStateParams)
-            countdownAux(nsp.op.apply(val, nsp.v), opSeq.concat([nsp]));
+        validMoves.forEach(move => {
+            countdownAux(move.apply(val), opSeq.concat([move]));
+        });
 
     }
 
@@ -94,7 +108,7 @@ function breadthFirstCountdown(numSeq, target) {
             lastAction = lastActions.get(val);
             if (!lastAction)
                 break;
-            path.push(lastAction);
+            path.push(lastAction.move);
             val = lastAction.val;
         }
         return path.reverse();
@@ -116,11 +130,10 @@ function breadthFirstCountdown(numSeq, target) {
         }
 
         let nextStateParams = [];
-        for (let v of numSeq)
-            for (let op of ops) {
-                if (op.isApplicable(val, v))
-                    nextStateParams.push({ val, v, op, res: op.apply(val, v) });
-            }
+
+        for (let move of getMoves(numSeq))
+            if (move.isApplicable(val))
+                nextStateParams.push({ val, move, res: move.apply(val) });
 
         nextStateParams = nextStateParams.filter(nsp => !visitedVals.has(nsp.res) && !toVisitVals.has(nsp.res));
 
@@ -131,9 +144,68 @@ function breadthFirstCountdown(numSeq, target) {
     }
 }
 
-const numSeq = [1, 2, 3, 12, 17];
-const target = 15;
-const { sol, visitedBranches } = breadthFirstCountdown(numSeq, target);
-const resStr = sol && sol.map(r => r.op + ' ' + r.v).join(' - ');
-console.log(resStr);
-console.log(visitedBranches);
+function streamCountdown(numSeq, target) {
+
+    const initialState = 0;
+    let visited = 0;
+
+    const moves = getMoves(numSeq)
+
+    function Path(history, endState) {
+        this.endState = endState;
+        this.extend = function (op) {
+            visited++;
+            return new Path([op].concat(history), op.apply(endState))
+        }
+        this.toString = function () {
+            return history.reverse().join(",");
+        }
+    }
+
+    const initialPath = new Path([], initialState);
+
+    function* from(paths, explored) {
+        if (!paths.size)
+            return [];
+        yield paths;
+
+        const more = new Set();
+        for (let path of paths) {
+            let validMoves = moves.filter(m => m.isApplicable(path.endState));
+            let nextPaths = validMoves.map(m => path.extend(m));
+            for (let next of nextPaths) {
+                if (!explored.has(next.endState))
+                    more.add(next);
+            }
+        }
+        yield* from(more, explored.add([...more].map(m => m.endState)));
+    }
+
+    function* solutions(target) {
+        const pathSets = from(new Set([initialPath]), new Set([initialState]));
+        for (pathSet of pathSets)
+            for (path of pathSet)
+                if (path.endState === target)
+                    yield path;
+    }
+
+    return {
+        sol: solutions(target).next().value,
+        visitedBranches: visited
+    };
+
+}
+
+const numSeq = [1, 2, 3, 10];
+const target = 4;
+const { sol: bfSol, visitedBranches: bfVisited } = breadthFirstCountdown(numSeq, target);
+print(bfSol);
+print(bfVisited);
+
+const { sol: sSol, visitedBranches: sVisited } = streamCountdown(numSeq, target);
+print(sSol);
+print(sVisited);
+
+const { sol: dfSol, visitedBranches: dfVisited } = depthFirstCountdown(numSeq, target);
+print(dfSol);
+print(dfVisited);
