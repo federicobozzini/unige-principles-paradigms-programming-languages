@@ -1,17 +1,11 @@
 function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
+    let currentIndex = array.length;
 
-    // While there remain elements to shuffle...
-    while (0 !== currentIndex) {
+    while (currentIndex) {
+        let randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
 
-        // Pick a remaining element...
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-
-        // And swap it with the current element.
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
     }
 
     return array;
@@ -37,7 +31,7 @@ const div = {
     isApplicable: (a, b) => a % b === 0,
     toString: () => 'div'
 }
-const ops = [add, sub, mul, div];
+const ops = [add, mul, sub, div];
 
 function depthFirstCountdown(numSeq, target, maxDepth = 15) {
 
@@ -65,7 +59,9 @@ function depthFirstCountdown(numSeq, target, maxDepth = 15) {
                 if (op.isApplicable(val, v))
                     nextStateParams.push({ v, op });
             }
+
         nextStateParams = shuffle(nextStateParams);
+
         for (let nsp of nextStateParams)
             countdownAux(nsp.op.apply(val, nsp.v), opSeq.concat([nsp]));
 
@@ -83,17 +79,13 @@ function depthFirstCountdown(numSeq, target, maxDepth = 15) {
     };
 }
 
-function shiftSet(s) {
-    let el;
-    for (let v of s) {
-        el = v;
-        break;
-    }
-    s.delete(el);
-    return el;
+function shiftSet(set) {
+    const firstValue = set.values().next().value;
+    set.delete(firstValue);
+    return firstValue;
 }
 
-function breadthFirstCountdown(numSeq, target, maxDepth = 35) {
+function breadthFirstCountdown(numSeq, target) {
 
     function getPath(lastActions, val) {
         const path = [];
@@ -119,29 +111,28 @@ function breadthFirstCountdown(numSeq, target, maxDepth = 35) {
         if (val === target) {
             return {
                 sol: getPath(lastActions, target),
-                visitedBranches: visitedVals.size};
+                visitedBranches: visitedVals.size
+            };
         }
-        
-        let nextStateParams = [];    
+
+        let nextStateParams = [];
         for (let v of numSeq)
             for (let op of ops) {
                 if (op.isApplicable(val, v))
-                    nextStateParams.push({ val, v, op, res: op.apply(val, v)});
+                    nextStateParams.push({ val, v, op, res: op.apply(val, v) });
             }
-        nextStateParams = shuffle(nextStateParams);
+
+        nextStateParams = nextStateParams.filter(nsp => !visitedVals.has(nsp.res) && !toVisitVals.has(nsp.res));
 
         nextStateParams.forEach(nsp => {
-            if (visitedVals.has(nsp.res) || toVisitVals.has(nsp.res))
-                return;
-            
             lastActions.set(nsp.res, nsp);
             toVisitVals.add(nsp.res);
         });
     }
 }
 
-const numSeq = [1, 2, 6];
-const target = 5649;
+const numSeq = [1, 2, 3, 12, 17];
+const target = 15;
 const { sol, visitedBranches } = breadthFirstCountdown(numSeq, target);
 const resStr = sol && sol.map(r => r.op + ' ' + r.v).join(' - ');
 console.log(resStr);
