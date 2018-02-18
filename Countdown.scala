@@ -3,8 +3,6 @@ class Countdown(numSeq: Vector[Int]) {
   type State = Int
   val initialState = 0
 
-  var visited = 0
-
 
   trait Op {
     def isApplicable(state: State): Boolean
@@ -47,7 +45,6 @@ class Countdown(numSeq: Vector[Int]) {
 
   class Path(history: List[Op], val endState: State) {
     def extend(op: Op) = {
-      visited = visited + 1
       new Path(op :: history, op apply endState)
     }
 
@@ -55,22 +52,22 @@ class Countdown(numSeq: Vector[Int]) {
   }
 
   val initialPath = new Path(Nil, initialState)
+  val visitedStates = scala.collection.mutable.Set[State](initialState)
 
-  def from(paths: Set[Path], explored: Set[State]): Stream[Set[Path]] =
+  def from(paths: Set[Path]): Stream[Set[Path]] =
     if (paths.isEmpty) Stream.empty
     else {
       val more = for {
         path <- paths
         validMoves = moves.filter(m => m.isApplicable(path.endState))
         next <- validMoves map path.extend
-        if !(explored contains next.endState)
+        if !(visitedStates contains next.endState)
       } yield next
-      paths #:: from(more, explored ++ (more map (_.endState)))
+      visitedStates ++= more.map(m => m.endState)
+      paths #:: from(more)
     }
 
-  val pathSets = from(Set(initialPath), Set(initialState))
-
-  def getVisited(): Int = visited
+  val pathSets = from(Set(initialPath))
 
   def solutions(target: Int): Stream[Path] = {
     for {

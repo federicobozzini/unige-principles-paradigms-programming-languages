@@ -1,8 +1,8 @@
 object test {
 
-  val problem = new Countdown(Vector(1, 2, 3, 12, 20))
+  val problem = new Countdown(Vector(1, 2, 3, 17))
 
-  problem.solutions(357)
+  problem.solutions(1657)
 
-  problem.visited
+  problem.visitedStates.size
 }
