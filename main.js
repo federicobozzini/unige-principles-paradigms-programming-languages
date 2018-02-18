@@ -23,25 +23,25 @@ function print(x) {
 
 function Add(v) {
     this.v = v;
-    this.apply = a => v + a;
+    this.apply = a => a + v;
     this.isApplicable = a => true;
     this.toString = () => 'add ' + v;
 }
 function Sub(v) {
     this.v = v;
-    this.apply = a => v - a;
+    this.apply = a => a - v;
     this.isApplicable = a => a >= v;
     this.toString = () => 'sub ' + v;
 }
 function Mul(v) {
     this.v = v;
-    this.apply = a => v * a;
+    this.apply = a => a * v;
     this.isApplicable = a => true;
     this.toString = () => 'mul ' + v;
 }
 function Div(v) {
     this.v = v;
-    this.apply = a => v / a;
+    this.apply = a => a / v;
     this.isApplicable = a => a % v === 0;
     this.toString = () => 'div ' + v;
 }
@@ -147,14 +147,13 @@ function breadthFirstCountdown(numSeq, target) {
 function streamCountdown(numSeq, target) {
 
     const initialState = 0;
-    let visited = 0;
+    const visitedStates = new Set([initialState]);
 
     const moves = getMoves(numSeq)
 
     function Path(history, endState) {
         this.endState = endState;
         this.extend = function (op) {
-            visited++;
             return new Path([op].concat(history), op.apply(endState))
         }
         this.toString = function () {
@@ -164,7 +163,7 @@ function streamCountdown(numSeq, target) {
 
     const initialPath = new Path([], initialState);
 
-    function* from(paths, explored) {
+    function* from(paths) {
         if (!paths.size)
             return [];
         yield paths;
@@ -174,11 +173,12 @@ function streamCountdown(numSeq, target) {
             let validMoves = moves.filter(m => m.isApplicable(path.endState));
             let nextPaths = validMoves.map(m => path.extend(m));
             for (let next of nextPaths) {
-                if (!explored.has(next.endState))
+                if (!visitedStates.has(next.endState))
                     more.add(next);
             }
         }
-        yield* from(more, explored.add([...more].map(m => m.endState)));
+        more.forEach(s => visitedStates.add(s.endState));
+        yield* from(more);
     }
 
     function* solutions(target) {
@@ -191,13 +191,13 @@ function streamCountdown(numSeq, target) {
 
     return {
         sol: solutions(target).next().value,
-        visitedBranches: visited
+        visitedBranches: visitedStates.size
     };
 
 }
 
-const numSeq = [1, 2, 3, 10];
-const target = 4;
+const numSeq = [1,  2, 3, 17)];
+const target = 1657;
 const { sol: bfSol, visitedBranches: bfVisited } = breadthFirstCountdown(numSeq, target);
 print(bfSol);
 print(bfVisited);
@@ -206,6 +206,6 @@ const { sol: sSol, visitedBranches: sVisited } = streamCountdown(numSeq, target)
 print(sSol);
 print(sVisited);
 
-const { sol: dfSol, visitedBranches: dfVisited } = depthFirstCountdown(numSeq, target);
-print(dfSol);
-print(dfVisited);
+// const { sol: dfSol, visitedBranches: dfVisited } = depthFirstCountdown(numSeq, target);
+// print(dfSol);
+// print(dfVisited);
