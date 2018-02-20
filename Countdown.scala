@@ -64,10 +64,10 @@ class Countdown(numSeq: Vector[Int]) {
         if !(visitedStates contains next.endState)
       } yield next
       visitedStates ++= more.map(m => m.endState)
-      paths #:: from(more)
+      more #:: from(more)
     }
 
-  val pathSets = from(Set(initialPath))
+  val pathSets = Set(initialPath) #:: from(Set(initialPath))
 
   def solutions(target: Int): Stream[Path] = {
     for {
