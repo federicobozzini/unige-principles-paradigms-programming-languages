@@ -182,7 +182,7 @@ function streamCountdown(numSeq, target) {
     }
 
     function* solutions(target) {
-        const pathSets = from(new Set([initialPath]), new Set([initialState]));
+        const pathSets = from(new Set([initialPath]));
         for (pathSet of pathSets)
             for (path of pathSet)
                 if (path.endState === target)
@@ -196,8 +196,8 @@ function streamCountdown(numSeq, target) {
 
 }
 
-const numSeq = [1,  2, 3, 17)];
-const target = 1657;
+const numSeq = [1,  2, 3, 17];
+const target = 3657;
 const { sol: bfSol, visitedBranches: bfVisited } = breadthFirstCountdown(numSeq, target);
 print(bfSol);
 print(bfVisited);
