@@ -11,19 +11,19 @@ class Countdown(numSeq: Vector[Int]) {
   }
 
   case class Add(v: Int) extends Op {
-    def isApplicable(state: State) = state <= v
+    def isApplicable(state: State) = true
 
     def apply(state: State) = state + v
   }
 
   case class Sub(v: Int) extends Op {
-    def isApplicable(state: State) = state >= v
+    def isApplicable(state: State) = state > v
 
     def apply(state: State) = state - v
   }
 
   case class Mul(v: Int) extends Op {
-    def isApplicable(state: State) = state <= v
+    def isApplicable(state: State) = true
 
     def apply(state: State) = state * v
   }
